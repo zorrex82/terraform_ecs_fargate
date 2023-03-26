@@ -45,5 +45,5 @@ resource "aws_ecs_service" "app" {
 }
 
 output "url" {
-  value = "http://${aws_ecs_service.app.load_balancer[0].dns_name}:3000"
+  value = "http://${aws_ecs_service.app.load_balancer.dns_name}:3000"
 }
