@@ -16,7 +16,7 @@ resource "aws_ecs_task_definition" "app" {
     image           = "${aws_ecr_repository.app.repository_url}:latest"
     portMappings    = [{
       containerPort = 3000
-      hostPort      = 0
+      hostPort      = 3000
     }]
     essential       = true
   }])
