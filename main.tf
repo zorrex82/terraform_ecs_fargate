@@ -32,14 +32,9 @@ resource "aws_ecs_service" "app" {
   desired_count   = 1
 
   network_configuration {
-    subnets          = ["subnet-12345678"]
-    security_groups  = ["sg-12345678"]
+    subnets          = ["subnet-035781b4468f3aa57"]
+    security_groups  = ["sg-0076afc693f213c24"]
     assign_public_ip = "true"
   }
 
-  load_balancer {
-    target_group_arn = "arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/my-target-group/73e2d6bc24d8a067"
-    container_name   = "app"
-    container_port   = 3000
-  }
 }
