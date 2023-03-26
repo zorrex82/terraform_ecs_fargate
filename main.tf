@@ -2,6 +2,32 @@ provider "aws" {
   region = "us-east-1"
 }
 
+resource "aws_vpc" "ecs_vpc" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_subnet" "ecs_subnet_1" {
+  vpc_id = aws_vpc.ecs_vpc.id
+  cidr_block = "10.0.1.0/24"
+}
+
+resource "aws_subnet" "ecs_subnet_2" {
+  vpc_id = aws_vpc.ecs_vpc.id
+  cidr_block = "10.0.2.0/24"
+}
+
+resource "aws_security_group" "ecs_security_group" {
+  name_prefix = "ecs-sg"
+  vpc_id = aws_vpc.ecs_vpc.id
+
+  ingress {
+    from_port = 0
+    to_port = 65535
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "ecs-task-execution-role"
 
@@ -28,18 +54,6 @@ resource "aws_ecr_repository" "app" {
   name = "app"
 }
 
-resource "aws_security_group" "app" {
-  name_prefix = "app"
-  vpc_id      = "vpc-123456789012" # Replace with your VPC ID
-
-  ingress {
-    from_port = 3000
-    to_port   = 3000
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Replace with your desired CIDR block
-  }
-}
-
 resource "aws_ecs_task_definition" "app" {
   family                   = "app"
   network_mode             = "awsvpc"
@@ -62,13 +76,18 @@ resource "aws_ecs_task_definition" "app" {
 
 resource "aws_ecs_service" "app" {
   name            = "app"
-  cluster         = "app"
+  cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
 
   network_configuration {
-    subnets          = ["subnet-035781b4468f3aa57"]
-    security_groups  = [aws_security_group.app.id]
-    assign_public_ip = true
+    subnets          = [aws_subnet.ecs_subnet_1.id, aws_subnet.ecs_subnet_2.id]
+    security_groups  = [aws_security_group.ecs_security_group.id]
+    assign_public_ip = "true"
   }
+
+}
+
+resource "aws_ecs_cluster" "ecs_cluster" {
+  name = "ecs-cluster"
 }
