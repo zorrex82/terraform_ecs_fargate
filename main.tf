@@ -2,28 +2,39 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_vpc" "ecs_vpc" {
+resource "aws_vpc" "app_vpc" {
   cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "app_vpc"
+  }
 }
 
-resource "aws_subnet" "ecs_subnet_1" {
-  vpc_id = aws_vpc.ecs_vpc.id
+resource "aws_subnet" "app_subnet_1" {
+  vpc_id = aws_vpc.app_vpc.id
   cidr_block = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+  tags = {
+    Name = "app_subnet_1"
+  }
 }
 
-resource "aws_subnet" "ecs_subnet_2" {
-  vpc_id = aws_vpc.ecs_vpc.id
+resource "aws_subnet" "app_subnet_2" {
+  vpc_id = aws_vpc.app_vpc.id
   cidr_block = "10.0.2.0/24"
+  availability_zone = "us-east-1b"
+  tags = {
+    Name = "app_subnet_2"
+  }
 }
 
-resource "aws_security_group" "ecs_security_group" {
-  name_prefix = "ecs-sg"
-  vpc_id = aws_vpc.ecs_vpc.id
+resource "aws_security_group" "app_sg" {
+  name_prefix = "app_sg_"
+  vpc_id      = aws_vpc.app_vpc.id
 
   ingress {
-    from_port = 0
-    to_port = 65535
-    protocol = "tcp"
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -76,18 +87,16 @@ resource "aws_ecs_task_definition" "app" {
 
 resource "aws_ecs_service" "app" {
   name            = "app"
-  cluster         = aws_ecs_cluster.ecs_cluster.id
+  cluster         = aws_ecs_cluster.app_cluster.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
 
   network_configuration {
-    subnets          = [aws_subnet.ecs_subnet_1.id, aws_subnet.ecs_subnet_2.id]
-    security_groups  = [aws_security_group.ecs_security_group.id]
-    assign_public_ip = "true"
+    subnets          = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
+    security_groups  = [aws_security_group.app_sg.id]
   }
-
 }
 
-resource "aws_ecs_cluster" "ecs_cluster" {
-  name = "ecs-cluster"
+resource "aws_ecs_cluster" "app_cluster" {
+  name = "app_cluster"
 }
