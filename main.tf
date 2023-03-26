@@ -43,7 +43,3 @@ resource "aws_ecs_service" "app" {
     container_port   = 3000
   }
 }
-
-output "url" {
-  value = "http://${aws_ecs_service.app.load_balancer.dns_name}:3000"
-}
