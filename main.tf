@@ -36,8 +36,14 @@ resource "aws_ecs_service" "app" {
     security_groups  = ["sg-12345678"]
     assign_public_ip = "true"
   }
+
+  load_balancer {
+    target_group_arn = "arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/my-target-group/73e2d6bc24d8a067"
+    container_name   = "app"
+    container_port   = 3000
+  }
 }
 
 output "url" {
-  value = "http://${aws_lb.frontend.dns_name}:3000"
+  value = "http://${aws_ecs_service.app.load_balancer[0].dns_name}:3000"
 }
