@@ -24,9 +24,11 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
 }
 
-
-
 resource "aws_ecr_repository" "app" {
+  name = "app"
+}
+
+resource "aws_ecs_cluster" "app" {
   name = "app"
 }
 
@@ -52,14 +54,13 @@ resource "aws_ecs_task_definition" "app" {
 
 resource "aws_ecs_service" "app" {
   name            = "app"
-  cluster         = "app"
+  cluster         = aws_ecs_cluster.app.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
 
   network_configuration {
     subnets          = ["subnet-035781b4468f3aa57"]
     security_groups  = ["sg-0076afc693f213c24"]
-    assign_public_ip = "true"
+    assign_public_ip = true
   }
-
 }
