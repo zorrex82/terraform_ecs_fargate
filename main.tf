@@ -28,8 +28,16 @@ resource "aws_ecr_repository" "app" {
   name = "app"
 }
 
-resource "aws_ecs_cluster" "app" {
-  name = "app"
+resource "aws_security_group" "app" {
+  name_prefix = "app"
+  vpc_id      = "vpc-123456789012" # Replace with your VPC ID
+
+  ingress {
+    from_port = 3000
+    to_port   = 3000
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Replace with your desired CIDR block
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
@@ -54,13 +62,13 @@ resource "aws_ecs_task_definition" "app" {
 
 resource "aws_ecs_service" "app" {
   name            = "app"
-  cluster         = aws_ecs_cluster.app.id
+  cluster         = "app"
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
 
   network_configuration {
     subnets          = ["subnet-035781b4468f3aa57"]
-    security_groups  = ["sg-0076afc693f213c24"]
+    security_groups  = [aws_security_group.app.id]
     assign_public_ip = true
   }
 }
