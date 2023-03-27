@@ -65,7 +65,7 @@ resource "aws_ecr_repository" "app" {
   name = "app"
 }
 
-resource "aws_ecs_task_definition" "app" {
+resource "aws_ecs_task_definition" "app_task" {
   family                   = "app"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
@@ -85,10 +85,10 @@ resource "aws_ecs_task_definition" "app" {
   cpu    = 256
 }
 
-resource "aws_ecs_service" "app" {
+resource "aws_ecs_service" "app_service" {
   name            = "app"
   cluster         = aws_ecs_cluster.app_cluster.id
-  task_definition = aws_ecs_task_definition.app.arn
+  task_definition = aws_ecs_task_definition.app_task.arn
   desired_count   = 1
 
   network_configuration {
@@ -99,15 +99,5 @@ resource "aws_ecs_service" "app" {
 
 resource "aws_ecs_cluster" "app_cluster" {
   name = "app_cluster"
-}
-
-resource "aws_ecr_repository" "app" {
-  name = "app"
-}
-
-resource "null_resource" "docker_build" {
-  provisioner "local-exec" {
-    command = "docker build -t ${aws_ecr_repository.app.repository_url}:latest ."
-  }
 }
 
