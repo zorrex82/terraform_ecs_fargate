@@ -61,19 +61,19 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
 }
 
-resource "aws_ecr_repository" "app" {
-  name = "app"
+resource "aws_ecr_repository" "app_repo" {
+  name = "app-repo"
 }
 
-resource "aws_ecs_task_definition" "app_task" {
+resource "aws_ecs_task_definition" "app_task_definition" {
   family                   = "app"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([{
-    name  = "app"
-    image = "${aws_ecr_repository.app.repository_url}:latest"
+    name  = "app_container"
+    image = "${aws_ecr_repository.app_repo.repository_url}:latest"
     portMappings = [{
       containerPort = 3000
       hostPort      = 3000
@@ -85,60 +85,18 @@ resource "aws_ecs_task_definition" "app_task" {
   cpu    = 256
 }
 
-resource "aws_ecs_service" "app_service" {
-  name            = "app_service"
-  cluster         = aws_ecs_cluster.app_cluster.id
-  task_definition = aws_ecs_task_definition.app_task_definition.arn
-  desired_count   = 0 // Stop the service before starting it again
-
-  deployment_controller {
-    type = "ECS"
-  }
-
-  network_configuration {
-    subnets         = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
-    security_groups = [aws_security_group.app_security_group.id]
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-// Wait for the service to fully stop before starting it again
-resource "null_resource" "wait_for_ecs_service_stop" {
-  depends_on = [
-    aws_ecs_service.app_service,
-  ]
-
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
-}
-
-// Start the service again
-resource "aws_ecs_service" "app_service" {
-  name            = "app_service"
-  cluster         = aws_ecs_cluster.app_cluster.id
-  task_definition = aws_ecs_task_definition.app_task_definition.arn
-  desired_count   = 1
-
-  deployment_controller {
-    type = "ECS"
-  }
-
-  network_configuration {
-    subnets         = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
-    security_groups = [aws_security_group.app_security_group.id]
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-
 resource "aws_ecs_cluster" "app_cluster" {
   name = "app_cluster"
 }
 
+resource "aws_ecs_service" "app_service" {
+  name            = "app-service"
+  cluster         = aws_ecs_cluster.app_cluster.id
+  task_definition = aws_ecs_task_definition.app_task_definition.arn
+  desired_count   = 1
+
+  network_configuration {
+    subnets          = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
+    security_groups  = [aws_security_group.app_sg.id]
+  }
+}
