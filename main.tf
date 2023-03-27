@@ -86,16 +86,57 @@ resource "aws_ecs_task_definition" "app_task" {
 }
 
 resource "aws_ecs_service" "app_service" {
-  name            = "app"
+  name            = "app_service"
   cluster         = aws_ecs_cluster.app_cluster.id
-  task_definition = aws_ecs_task_definition.app_task.arn
-  desired_count   = 1
+  task_definition = aws_ecs_task_definition.app_task_definition.arn
+  desired_count   = 0 // Stop the service before starting it again
+
+  deployment_controller {
+    type = "ECS"
+  }
 
   network_configuration {
-    subnets          = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
-    security_groups  = [aws_security_group.app_sg.id]
+    subnets         = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
+    security_groups = [aws_security_group.app_security_group.id]
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
+
+// Wait for the service to fully stop before starting it again
+resource "null_resource" "wait_for_ecs_service_stop" {
+  depends_on = [
+    aws_ecs_service.app_service,
+  ]
+
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
+}
+
+// Start the service again
+resource "aws_ecs_service" "app_service" {
+  name            = "app_service"
+  cluster         = aws_ecs_cluster.app_cluster.id
+  task_definition = aws_ecs_task_definition.app_task_definition.arn
+  desired_count   = 1
+
+  deployment_controller {
+    type = "ECS"
+  }
+
+  network_configuration {
+    subnets         = [aws_subnet.app_subnet_1.id, aws_subnet.app_subnet_2.id]
+    security_groups = [aws_security_group.app_security_group.id]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 
 resource "aws_ecs_cluster" "app_cluster" {
   name = "app_cluster"
