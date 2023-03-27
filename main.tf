@@ -100,3 +100,14 @@ resource "aws_ecs_service" "app" {
 resource "aws_ecs_cluster" "app_cluster" {
   name = "app_cluster"
 }
+
+resource "aws_ecr_repository" "app" {
+  name = "app"
+}
+
+resource "null_resource" "docker_build" {
+  provisioner "local-exec" {
+    command = "docker build -t ${aws_ecr_repository.app.repository_url}:latest ."
+  }
+}
+
