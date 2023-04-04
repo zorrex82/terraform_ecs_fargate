@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket = "terraform-tfstate-edinor"
+    bucket = "bucket-name-unique"
     key    = "terraform.tfstate"
     region = "us-east-1"
   }
